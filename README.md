@@ -1,0 +1,1 @@
+# Rosetta.S3StoragePlugin
