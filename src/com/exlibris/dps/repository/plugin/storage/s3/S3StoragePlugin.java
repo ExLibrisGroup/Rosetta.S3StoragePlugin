@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -192,8 +193,7 @@ public class S3StoragePlugin extends AbstractStorageHandler {
 				String md5NewValue = fixities.get(0).getValue();
 				//validate stored entity fixity with the original one
 				String md5OriginalValue = storedEntityMetadata.getFixityByType(Fixity.FixityAlgorithm.MD5.toString());
-				if(md5NewValue == null || md5OriginalValue == null ||
-						md5OriginalValue != null && md5NewValue != null && md5NewValue.equalsIgnoreCase(md5OriginalValue)){
+				if(StringUtils.isEmpty(md5NewValue) || StringUtils.isEmpty(md5OriginalValue) || md5NewValue.equalsIgnoreCase(md5OriginalValue)){
 					long min = (System.currentTimeMillis() - start)/60000;
 					log.info("File uploaded "+uniqueId+" to Amazon "+upload.isDone()+" "+upload.getState()+" within "+min+" min");
 					return true;
