@@ -24,7 +24,7 @@
 	<target name="copy_jars">
 		<echo>Copy lib jars</echo>
 		<copy todir="${build.dir}/lib" overwrite="true">
-			<fileset dir="${lib.dir}" includes="**.jar" />
+			<fileset dir="${lib.dir}" includes="**.jar" excludes="dps-sdk-${version}.jar" />
 		</copy>
 	</target>
 
@@ -37,7 +37,7 @@
 
 
 	<target name="build_jar" depends="compile">
-		<echo> Build NetAppStoragePlugin jar </echo>
+		<echo> Build S3StoragePlugin jar </echo>
 		<jar destfile="${target.dir}/S3StoragePlugin.jar" basedir="${build.dir}/classes">
 			<fileset dir="${src.dir}" includes="**" excludes=" com/**" />
 			<fileset dir="${build.dir}" includes="*lib/*.jar" excludes="classes/**" />
