@@ -83,7 +83,7 @@
 </fr:x_form>
 </pl:initParameters>
   <pl:description>Amazon S3 Storage Plugin</pl:description>
-  <pl:version>5.0</pl:version>
+  <pl:version>6.0</pl:version>
   <pl:materialType>DIGITAL</pl:materialType>
   <pl:module>Repository</pl:module>
   <pl:generalType>TASK</pl:generalType>
