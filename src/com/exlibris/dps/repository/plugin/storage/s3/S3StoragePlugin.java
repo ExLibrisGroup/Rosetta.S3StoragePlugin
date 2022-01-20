@@ -5,9 +5,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.time.Duration;
-import java.util.Base64;
 import java.util.List;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 
@@ -15,7 +15,6 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.auth.signer.AwsS3V4Signer;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
-import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption;
 import software.amazon.awssdk.core.exception.SdkClientException;
@@ -25,21 +24,15 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.GetUrlRequest;
-import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.utils.BinaryUtils;
-import software.amazon.awssdk.utils.IoUtils;
-import software.amazon.awssdk.utils.Md5Utils;
 
 import com.exlibris.core.infra.common.exceptions.logging.ExLogger;
+import com.exlibris.core.infra.common.util.Checksummer;
 import com.exlibris.core.sdk.storage.containers.StoredEntityMetaData;
 import com.exlibris.core.sdk.storage.handler.AbstractStorageHandler;
 import com.exlibris.digitool.common.storage.Fixity;
-import com.exlibris.digitool.repository.api.IEEditor;
-import com.exlibris.digitool.repository.api.RepositoryTaskPlugin;
 
 public class S3StoragePlugin extends AbstractStorageHandler {
 
@@ -150,18 +143,39 @@ public class S3StoragePlugin extends AbstractStorageHandler {
 	public boolean checkFixity(List<Fixity> fixities, String storedEntityIdentifier) throws Exception {
 		boolean result = true;
 		for(Fixity fixity: fixities) {
+			String currentValue = fixity.getValue();
+			String awsValue = "";
 			if (Fixity.FixityAlgorithm.MD5.toString().equals(fixity.getAlgorithm())) {
-				String currentValue = fixity.getValue();
-				String awsValue = getObjectMd5(storedEntityIdentifier);
+				awsValue = getObjectMd5(storedEntityIdentifier);
 				result = currentValue == null || StringUtils.equals(currentValue, awsValue);
 				fixity.setResult(result);
-			} else {
+				fixity.setValue(awsValue);
+			} 
+			else if (Fixity.FixityAlgorithm.SHA256.toString().equals(fixity.getAlgorithm())){
+				awsValue = getObjectSHA256(storedEntityIdentifier);
+				result = currentValue == null || StringUtils.equals(currentValue, awsValue);
+				fixity.setResult(result);
+				fixity.setValue(awsValue);
+			}
+			else{
 				fixity.setResult(true);
 			}
+			
 		}
 		return result;
 	}
 
+
+
+	private String getObjectSHA256(String storedEntityIdentifier) throws IOException {
+		String localFilePath= getLocalFilePath(storedEntityIdentifier);
+		File file = new File(localFilePath);
+		Checksummer checksum = new Checksummer(file, false, false, false, true);
+		String value = checksum.getSHA256();
+		FileUtils.deleteQuietly(file);
+		return value;
+	}
+	
 	private String getObjectMd5(String entityIdentifier) {
 
 		S3Client s3Client = getS3Client();
